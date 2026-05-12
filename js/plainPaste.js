@@ -43,7 +43,10 @@
                     // 4. Normalize line breaks
                     text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
-                    // 5. Identify paragraph signals
+                    // 5. Clean up PDF hyphenation (e.g. "Some-\ntimes" -> "Sometimes")
+                    text = text.replace(/(\w)-\s*\n\s*(\w)/g, '$1$2');
+
+                    // 6. Identify paragraph signals
                     // Case A: Standard double newlines
                     text = text.replace(/\n\s*\n+/g, '[[PARAGRAPH]]');
                     // Case B: Single newline followed by indentation (2+ spaces)
