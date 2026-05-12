@@ -42,17 +42,40 @@
                     // 4. Normalize line breaks
                     text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
-                    // 5. Identify paragraph breaks (detect double newlines)
+                    // 4. Identify paragraph breaks
+                    // Case A: Standard double newlines
                     text = text.replace(/\n\s*\n+/g, '[[PARAGRAPH]]');
+                    // Case B: Single newline followed by indentation (2+ spaces or a tab)
+                    // This is a common PDF paragraph signal.
+                    text = text.replace(/\n([ \t]{2,})/g, '[[PARAGRAPH]]$1');
 
-                    // 6. Clean up single line breaks: 
-                    // Merge single newlines into a single space (typical of PDF line wraps)
-                    text = text.replace(/\s*\n\s*/g, ' ');
+                    // 5. Clean up single line breaks (Smart Merge): 
+                    // We merge lines that look like they were wrapped mid-paragraph.
+                    text = text.split('\n').reduce(function(acc, line, i, arr) {
+                        if (i === 0) return line;
+                        var prev = arr[i-1].trim();
+                        var current = line.trim();
 
-                    // 7. Restore paragraph breaks
+                        if (!prev || !current) return acc + '\n' + line;
+
+                        // DON'T merge if previous line is a paragraph marker
+                        if (prev.indexOf('[[PARAGRAPH]]') !== -1) return acc + '\n' + line;
+
+                        // DON'T merge if previous line ends with sentence punctuation (. ! ? : ;)
+                        if (/[.!?:]/.test(prev.slice(-1))) return acc + '\n' + line;
+
+                        // DON'T merge if previous line is very short (likely a title or header)
+                        // Standard wrapped lines in PDFs are usually > 50-60 chars.
+                        if (prev.length < 55) return acc + '\n' + line;
+
+                        // Otherwise, it's likely a mid-paragraph wrap. Merge with a space.
+                        return acc + ' ' + line;
+                    }, "");
+
+                    // 6. Restore paragraph breaks
                     text = text.replace(/\[\[PARAGRAPH\]\]/g, '\n\n');
 
-                    // 8. Final space normalization: collapse horizontal whitespace
+                    // 7. Final space normalization: collapse multiple horizontal spaces
                     text = text.replace(/[ \t]+/g, ' ');
 
                     // 9. Fix extra space before punctuation (e.g., "links ." -> "links.")
