@@ -29,8 +29,9 @@
                 if (e.content) {
                     var html = e.content;
 
-                    // 1. Convert block tags to newlines to ensure separation
-                    html = html.replace(/<\/p>|<br\/?>|<\/div>|<\/h[1-6]>|<\/li>/gi, '\n');
+                    // 1. Convert block tags to double newlines to ensure paragraph preservation
+                    html = html.replace(/<\/p>|<\/div>|<\/h[1-6]>/gi, '\n\n');
+                    html = html.replace(/<br\/?>|<\/li>/gi, '\n');
 
                     // 2. Replace all other tags with a single space to prevent word squashing
                     var text = html.replace(/<[^>]*>/g, ' ');
