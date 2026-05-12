@@ -17,8 +17,6 @@ class PlainPastePlugin extends GenericPlugin
         if (parent::register($category, $path, $mainContextId)) {
             if ($this->getEnabled()) {
                 Hook::add('TemplateManager::display', [$this, 'injectJS']);
-                Hook::add('TemplateManager::setupBackendPage', [$this, 'injectJS']);
-                Hook::add('PKPHandler::setupTemplate', [$this, 'injectJS']);
             }
             return true;
         }
@@ -33,26 +31,20 @@ class PlainPastePlugin extends GenericPlugin
      */
     public function injectJS($hookName, $args)
     {
+        $templateMgr = $args[0];
         $request = Application::get()->getRequest();
-        $templateMgr = $args[0] ?? TemplateManager::getManager($request);
-
-        if (!$templateMgr) {
-            return false;
-        }
-
-        // Test if the hook is firing by adding an inline log
-        $templateMgr->addHeader(
-            'plainPasteTest',
-            '<script type="text/javascript">console.log("PlainPaste: PHP Hook is firing!");</script>'
-        );
 
         $baseUrl = $request->getBaseUrl();
-        $jsUrl = $baseUrl . '/' . $this->getPluginPath() . '/js/plainPaste.js?v=' . time();
+        $jsUrl = $baseUrl . '/' . $this->getPluginPath() . '/js/plainPaste.js';
 
-        // Use addHeader for more reliable injection in OJS 3.4 backend
-        $templateMgr->addHeader(
+        // Add the script to both frontend and backend
+        $templateMgr->addJavaScript(
             'plainPaste',
-            '<script type="text/javascript" src="' . $jsUrl . '"></script>'
+            $jsUrl,
+            [
+                'contexts' => ['backend', 'frontend'],
+                'priority' => STYLE_SEQUENCE_LAST // Ensure it loads after TinyMCE
+            ]
         );
 
         return false;
