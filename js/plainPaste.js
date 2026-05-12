@@ -29,29 +29,33 @@
                 if (e.content) {
                     var text = e.content;
 
-                    // 1. Strip all HTML tags
+                    // 1. Convert block tags to newlines to preserve separation
+                    text = text.replace(/<\/p>|<br\/?>|<\/div>|<\/h[1-6]>|<\/li>/gi, '\n');
+
+                    // 2. Strip all remaining HTML tags
                     text = text.replace(/<[^>]*>/g, ' ');
 
-                    // 2. Normalize all types of spaces (NBSP, etc.) to normal spaces
+                    // 3. Normalize all types of weird spaces to normal spaces
                     text = text.replace(/[\u00A0\u1680\u180e\u2000-\u200a\u202f\u205f\u3000\ufeff]/g, ' ');
 
-                    // 3. Normalize line breaks
+                    // 4. Normalize line breaks
                     text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
-                    // 4. Identify paragraph breaks (two or more newlines)
+                    // 5. Identify paragraph breaks (two or more newlines)
                     text = text.replace(/\n\s*\n+/g, '[[PARAGRAPH]]');
 
-                    // 5. Clean up single line breaks: 
+                    // 6. Clean up single line breaks: 
                     // Replace single newlines and surrounding whitespace with a single space
                     text = text.replace(/\s*\n\s*/g, ' ');
 
-                    // 6. Restore paragraph breaks
+                    // 7. Restore paragraph breaks
                     text = text.replace(/\[\[PARAGRAPH\]\]/g, '\n\n');
 
-                    // 7. Final space normalization: collapse all whitespace into a single space
-                    text = text.replace(/\s+/g, ' ');
+                    // 8. Final space normalization: collapse only HORIZONTAL whitespace
+                    // We avoid \s here because it would collapse the \n\n we just restored
+                    text = text.replace(/[ \t]+/g, ' ');
 
-                    // 8. Trim and join
+                    // 9. Trim each line
                     text = text.split('\n').map(function(line) {
                         return line.trim();
                     }).join('\n');
@@ -77,9 +81,8 @@
 
     // Attempt initialization
     if (!initPlainPaste()) {
-        // If tinymce isn't loaded yet, poll for it
         var attempts = 0;
-        var maxAttempts = 20; // 10 seconds
+        var maxAttempts = 20; 
         var poll = setInterval(function() {
             attempts++;
             if (initPlainPaste() || attempts >= maxAttempts) {
