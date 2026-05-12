@@ -39,6 +39,12 @@ class PlainPastePlugin extends GenericPlugin
             return false;
         }
 
+        // Test if the hook is firing by adding an inline log
+        $templateMgr->addHeader(
+            'plainPasteTest',
+            '<script type="text/javascript">console.log("PlainPaste: PHP Hook is firing!");</script>'
+        );
+
         $baseUrl = $request->getBaseUrl();
         $jsUrl = $baseUrl . '/' . $this->getPluginPath() . '/js/plainPaste.js?v=' . time();
 
