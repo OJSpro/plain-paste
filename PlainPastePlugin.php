@@ -18,6 +18,7 @@ class PlainPastePlugin extends GenericPlugin
             if ($this->getEnabled()) {
                 Hook::add('TemplateManager::display', [$this, 'injectJS']);
                 Hook::add('TemplateManager::setupBackendPage', [$this, 'injectJS']);
+                Hook::add('PKPHandler::setupTemplate', [$this, 'injectJS']);
             }
             return true;
         }
