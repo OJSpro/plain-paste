@@ -34,29 +34,34 @@
                 }
             });
 
-            // Cleanup whitespace on paste (enhanced for PDF sources)
+            // Cleanup whitespace on paste (further refined for PDF sources)
             editor.on('PastePreProcess', function(e) {
                 if (e.content) {
-                    // 1. Strip all HTML tags just in case
+                    // 1. Strip all HTML tags
                     var text = e.content.replace(/<[^>]*>/g, ' ');
 
-                    // 2. Decode HTML entities (like &nbsp;)
+                    // 2. Decode HTML entities
                     var doc = new DOMParser().parseFromString(text, 'text/html');
                     text = doc.documentElement.textContent;
 
-                    // 3. Normalize line breaks: Replace single newlines with a space, 
-                    // but keep double newlines as paragraph breaks.
-                    // First, replace actual double+ newlines with a unique placeholder
+                    // 3. Normalize line breaks
+                    text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+                    // 4. Identify paragraph breaks (two or more newlines with optional spaces)
+                    // We use a unique placeholder to preserve these
                     text = text.replace(/\n\s*\n+/g, '[[PARAGRAPH]]');
-                    // Replace remaining single newlines with a space
-                    text = text.replace(/\n+/g, ' ');
-                    // Restore paragraph breaks
+
+                    // 5. Clean up single line breaks: 
+                    // Replace single newlines and any surrounding whitespace with a single space
+                    text = text.replace(/\s*\n\s*/g, ' ');
+
+                    // 6. Restore paragraph breaks
                     text = text.replace(/\[\[PARAGRAPH\]\]/g, '\n\n');
 
-                    // 4. Collapse multiple spaces into a single space
-                    text = text.replace(/[ ]+/g, ' ');
+                    // 7. Final space normalization: collapse multiple spaces and tabs
+                    text = text.replace(/[ \t]+/g, ' ');
 
-                    // 5. Trim leading/trailing whitespace from each line
+                    // 8. Trim each line individually
                     text = text.split('\n').map(function(line) {
                         return line.trim();
                     }).join('\n');
