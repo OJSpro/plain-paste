@@ -40,16 +40,12 @@ class PlainPastePlugin extends GenericPlugin
         }
 
         $baseUrl = $request->getBaseUrl();
-        $jsUrl = $baseUrl . '/' . $this->getPluginPath() . '/js/plainPaste.js';
+        $jsUrl = $baseUrl . '/' . $this->getPluginPath() . '/js/plainPaste.js?v=' . time();
 
-        // Add the script to both frontend and backend
-        $templateMgr->addJavaScript(
+        // Use addHeader for more reliable injection in OJS 3.4 backend
+        $templateMgr->addHeader(
             'plainPaste',
-            $jsUrl,
-            [
-                'contexts' => ['backend', 'frontend'],
-                'priority' => STYLE_SEQUENCE_LAST // Ensure it loads after TinyMCE
-            ]
+            '<script type="text/javascript" src="' . $jsUrl . '"></script>'
         );
 
         return false;
