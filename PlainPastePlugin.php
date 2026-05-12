@@ -32,8 +32,12 @@ class PlainPastePlugin extends GenericPlugin
      */
     public function injectJS($hookName, $args)
     {
-        $templateMgr = $args[0];
         $request = Application::get()->getRequest();
+        $templateMgr = $args[0] ?? TemplateManager::getManager($request);
+
+        if (!$templateMgr) {
+            return false;
+        }
 
         $baseUrl = $request->getBaseUrl();
         $jsUrl = $baseUrl . '/' . $this->getPluginPath() . '/js/plainPaste.js';
