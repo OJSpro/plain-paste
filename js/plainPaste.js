@@ -27,13 +27,13 @@
             editor.on('PastePreProcess', function(e) {
                 console.log('PlainPaste: Processing paste event for ' + editor.id);
                 if (e.content) {
-                    // 1. Force spaces around tags to prevent word squashing
-                    var html = e.content.replace(/</g, ' <').replace(/>/g, '> ');
+                    var html = e.content;
 
-                    // 2. Use a temporary element to extract text (handles block elements and entities)
-                    var temp = document.createElement('div');
-                    temp.innerHTML = html;
-                    var text = temp.innerText || temp.textContent || "";
+                    // 1. Convert block tags to newlines to ensure separation
+                    html = html.replace(/<\/p>|<br\/?>|<\/div>|<\/h[1-6]>|<\/li>/gi, '\n');
+
+                    // 2. Replace all other tags with a single space to prevent word squashing
+                    var text = html.replace(/<[^>]*>/g, ' ');
 
                     // 3. Normalize all types of weird spaces to normal spaces
                     text = text.replace(/[\u00A0\u1680\u180e\u2000-\u200a\u202f\u205f\u3000\ufeff]/g, ' ');
@@ -51,10 +51,13 @@
                     // 7. Restore paragraph breaks
                     text = text.replace(/\[\[PARAGRAPH\]\]/g, '\n\n');
 
-                    // 8. Final space normalization: collapse horizontal whitespace only
+                    // 8. Final space normalization: collapse horizontal whitespace
                     text = text.replace(/[ \t]+/g, ' ');
 
-                    // 9. Trim each line
+                    // 9. Fix extra space before punctuation (e.g., "links ." -> "links.")
+                    text = text.replace(/[ ]+([.,!?;:])/g, '$1');
+
+                    // 10. Trim each line
                     text = text.split('\n').map(function(line) {
                         return line.trim();
                     }).join('\n');
