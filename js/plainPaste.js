@@ -14,59 +14,50 @@
          * Apply settings to a single editor instance
          */
         var setupEditor = function(editor) {
+            console.log('PlainPaste: Initializing editor ' + editor.id);
+
             // Set paste_as_text to true in the options
-            // This is the standard TinyMCE way to force plain text paste
             if (editor.options && typeof editor.options.set === 'function') {
                 editor.options.set('paste_as_text', true);
             } else if (editor.settings) {
                 editor.settings.paste_as_text = true;
             }
 
-            // Hook into the init event to ensure the command is toggled
-            editor.on('init', function() {
-                try {
-                    // Force the toggle command if the paste plugin is loaded
-                    if (editor.hasPlugin('paste')) {
-                        editor.execCommand('mceTogglePlainTextPaste', true);
-                    }
-                } catch (e) {
-                    console.log('PlainPaste: Could not force toggle command', e);
-                }
-            });
-
-            // Cleanup whitespace on paste (further refined for PDF sources)
+            // Cleanup whitespace on paste
             editor.on('PastePreProcess', function(e) {
+                console.log('PlainPaste: Processing paste event for ' + editor.id);
                 if (e.content) {
-                    // 1. Strip all HTML tags
-                    var text = e.content.replace(/<[^>]*>/g, ' ');
+                    var text = e.content;
 
-                    // 2. Decode HTML entities
-                    var doc = new DOMParser().parseFromString(text, 'text/html');
-                    text = doc.documentElement.textContent;
+                    // 1. Strip all HTML tags
+                    text = text.replace(/<[^>]*>/g, ' ');
+
+                    // 2. Normalize all types of spaces (NBSP, etc.) to normal spaces
+                    text = text.replace(/[\u00A0\u1680\u180e\u2000-\u200a\u202f\u205f\u3000\ufeff]/g, ' ');
 
                     // 3. Normalize line breaks
                     text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
-                    // 4. Identify paragraph breaks (two or more newlines with optional spaces)
-                    // We use a unique placeholder to preserve these
+                    // 4. Identify paragraph breaks (two or more newlines)
                     text = text.replace(/\n\s*\n+/g, '[[PARAGRAPH]]');
 
                     // 5. Clean up single line breaks: 
-                    // Replace single newlines and any surrounding whitespace with a single space
+                    // Replace single newlines and surrounding whitespace with a single space
                     text = text.replace(/\s*\n\s*/g, ' ');
 
                     // 6. Restore paragraph breaks
                     text = text.replace(/\[\[PARAGRAPH\]\]/g, '\n\n');
 
-                    // 7. Final space normalization: collapse multiple spaces and tabs
-                    text = text.replace(/[ \t]+/g, ' ');
+                    // 7. Final space normalization: collapse all whitespace into a single space
+                    text = text.replace(/\s+/g, ' ');
 
-                    // 8. Trim each line individually
+                    // 8. Trim and join
                     text = text.split('\n').map(function(line) {
                         return line.trim();
                     }).join('\n');
 
                     e.content = text.trim();
+                    console.log('PlainPaste: Cleaned content', e.content);
                 }
             });
         };
