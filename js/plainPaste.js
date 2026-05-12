@@ -34,19 +34,34 @@
                 }
             });
 
-            // Cleanup whitespace on paste (useful for PDF sources)
+            // Cleanup whitespace on paste (enhanced for PDF sources)
             editor.on('PastePreProcess', function(e) {
-                // First, if paste_as_text is handled by TinyMCE, it might already be plain text
-                // But we can intercept and clean it up here.
                 if (e.content) {
-                    // 1. Replace multiple spaces with a single space
-                    e.content = e.content.replace(/[ ]+/g, ' ');
-                    
-                    // 2. Remove spaces at the beginning/end of lines
-                    e.content = e.content.replace(/^[ ]+|[ ]+$/gm, '');
-                    
-                    // 3. Optional: Collapse multiple newlines (uncomment if desired)
-                    // e.content = e.content.replace(/\n\n+/g, '\n\n');
+                    // 1. Strip all HTML tags just in case
+                    var text = e.content.replace(/<[^>]*>/g, ' ');
+
+                    // 2. Decode HTML entities (like &nbsp;)
+                    var doc = new DOMParser().parseFromString(text, 'text/html');
+                    text = doc.documentElement.textContent;
+
+                    // 3. Normalize line breaks: Replace single newlines with a space, 
+                    // but keep double newlines as paragraph breaks.
+                    // First, replace actual double+ newlines with a unique placeholder
+                    text = text.replace(/\n\s*\n+/g, '[[PARAGRAPH]]');
+                    // Replace remaining single newlines with a space
+                    text = text.replace(/\n+/g, ' ');
+                    // Restore paragraph breaks
+                    text = text.replace(/\[\[PARAGRAPH\]\]/g, '\n\n');
+
+                    // 4. Collapse multiple spaces into a single space
+                    text = text.replace(/[ ]+/g, ' ');
+
+                    // 5. Trim leading/trailing whitespace from each line
+                    text = text.split('\n').map(function(line) {
+                        return line.trim();
+                    }).join('\n');
+
+                    e.content = text.trim();
                 }
             });
         };
